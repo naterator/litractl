@@ -1,0 +1,6 @@
+/litracli
+/litracli.exe
+/dist/
+*.test
+coverage.out
+.DS_Store

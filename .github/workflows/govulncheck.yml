@@ -1,0 +1,21 @@
+name: Vulnerability Check
+
+on: [pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  govulncheck:
+    name: govulncheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set Up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: stable
+          cache-dependency-path: go.sum
+      - name: Check for Vulnerabilities
+        uses: imjasonh/govulncheck-action@v0.1
