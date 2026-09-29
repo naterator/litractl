@@ -1,6 +1,13 @@
 name: Vulnerability Check
 
-on: [pull_request]
+# Also run on main and weekly: new advisories can affect unchanged code.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '23 6 * * 1'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -10,12 +17,8 @@ jobs:
     name: govulncheck
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-      - name: Set Up Go
-        uses: actions/setup-go@v7
-        with:
-          go-version: stable
-          cache-dependency-path: go.sum
+      # The action checks out the repository and installs the latest stable Go.
       - name: Check for Vulnerabilities
-        uses: imjasonh/govulncheck-action@v0.1
+        uses: golang/govulncheck-action@032d45514ae346b1db93c04b0c90b841c370344f # v1.1.0
+        with:
+          cache-dependency-path: go.sum

@@ -74,8 +74,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      # Third-party action with a write token: pin the commit, not a movable tag.
       - name: Build and Upload Binary
-        uses: wangyoucao577/go-release-action@v1
+        uses: wangyoucao577/go-release-action@279495102627de7960cbc33434ab01a12bae144b # v1.55
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goos: ${{ matrix.goos }}

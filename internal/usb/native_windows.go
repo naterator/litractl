@@ -184,8 +184,13 @@ func (d *winDevice) io(p []byte, write bool, timeout time.Duration) (int, error)
 	if waitErr != nil || status != windows.WAIT_OBJECT_0 {
 		// Always drain canceled I/O before Go may reclaim the buffer/OVERLAPPED.
 		windows.CancelIoEx(d.handle, &over)
-		windows.GetOverlappedResult(d.handle, &over, &done, true)
+		drainErr := windows.GetOverlappedResult(d.handle, &over, &done, true)
 		runtime.KeepAlive(p)
+		// The I/O can complete between the wait and the cancellation; report
+		// it instead of discarding an input report that was already consumed.
+		if drainErr == nil {
+			return int(done), nil
+		}
 		if waitErr != nil {
 			return 0, waitErr
 		}

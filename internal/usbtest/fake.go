@@ -3,6 +3,7 @@
 package usbtest
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/naterator/litractl/internal/usb"
@@ -25,7 +26,12 @@ func (b *Backend) Open(path string) (usb.Device, error) {
 	if err := b.OpenErrors[path]; err != nil {
 		return nil, err
 	}
-	return b.Devices[path], nil
+	// Returning a nil *Device would make a non-nil interface that panics on use.
+	d, ok := b.Devices[path]
+	if !ok {
+		return nil, fmt.Errorf("usbtest: no fake device at %q", path)
+	}
+	return d, nil
 }
 func (*Backend) Version() string { return "fake" }
 func (b *Backend) Close() error  { b.Closed++; return nil }

@@ -13,6 +13,22 @@ import (
 
 type Selector struct{ Serial, Path string }
 
+// name identifies a light by serial number, or by path when it has none.
+func name(d usb.Info) string {
+	if d.Serial == "" {
+		return d.Path
+	}
+	return d.Serial
+}
+
+// describe identifies a light in errors by serial number and path.
+func describe(d usb.Info) string {
+	if d.Serial == "" {
+		return d.Path
+	}
+	return d.Serial + " (" + d.Path + ")"
+}
+
 // Devices selects the vendor control collection, avoiding consumer-control
 // collections that appear as separate, non-writable paths on Windows. macOS
 // can enumerate the same path more than once, so paths are also deduplicated.
@@ -57,14 +73,14 @@ func Apply(ctx context.Context, b usb.Backend, devices []usb.Info, actions []Act
 	}
 	handles := make([]opened, 0, len(devices))
 	var failures []error
+	// The action loop reports cancellation once, including cancellation here.
 	for _, info := range devices {
-		if err := ctx.Err(); err != nil {
-			failures = append(failures, err)
+		if ctx.Err() != nil {
 			break
 		}
 		d, err := b.Open(info.Path)
 		if err != nil {
-			failures = append(failures, fmt.Errorf("open %s (%s): %w", info.Serial, info.Path, err))
+			failures = append(failures, fmt.Errorf("open %s: %w", describe(info), err))
 			continue
 		}
 		handles = append(handles, opened{info: info, device: d})
@@ -84,11 +100,11 @@ func Apply(ctx context.Context, b usb.Backend, devices []usb.Info, actions []Act
 				err = io.ErrShortWrite
 			}
 			if err != nil {
-				failures = append(failures, fmt.Errorf("%s on %s (%s): %w", action.Description, h.info.Serial, h.info.Path, err))
+				failures = append(failures, fmt.Errorf("%s on %s: %w", action.Description, describe(h.info), err))
 				h.failed = true
 				continue
 			}
-			fmt.Fprintf(out, "%s: %s\n", h.info.Serial, action.Description)
+			fmt.Fprintf(out, "%s: %s\n", name(h.info), action.Description)
 		}
 	}
 	for _, h := range handles {

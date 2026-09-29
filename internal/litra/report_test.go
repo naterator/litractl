@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/naterator/litractl/internal/usb"
@@ -116,5 +117,19 @@ func TestAllLightsAndPartialFailures(t *testing.T) {
 	}
 	if Apply(context.Background(), &usbtest.Backend{}, nil, nil, io.Discard) == nil {
 		t.Fatal("missing lights accepted")
+	}
+}
+
+func TestApplyCanceledBeforeOpening(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	backend := &usbtest.Backend{}
+	actions, _ := Parse([]string{"on"})
+	err := Apply(ctx, backend, []usb.Info{usbtest.Light("a", "one")}, actions, io.Discard)
+	if !errors.Is(err, context.Canceled) || strings.Count(err.Error(), context.Canceled.Error()) != 1 {
+		t.Fatalf("error = %q", err)
+	}
+	if len(backend.Opened) != 0 {
+		t.Fatalf("opened %v after cancellation", backend.Opened)
 	}
 }

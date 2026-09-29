@@ -423,7 +423,7 @@ func (d *macDevice) GetReportDescriptor(p []byte) (int, error) {
 		return 0, errors.New("device has no report descriptor")
 	}
 	if len(data) > len(p) {
-		return 0, ioBufferTooSmall
+		return 0, errBufferTooSmall
 	}
 	return copy(p, data), nil
 }

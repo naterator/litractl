@@ -4,6 +4,8 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -25,6 +27,44 @@ func TestCLIChainsAndSelectors(t *testing.T) {
 	}
 	if len(d.Writes) != 5 || b.Closed != 1 || len(b.Opened) != 1 || b.Opened[0] != "b" {
 		t.Fatalf("bad execution: %+v %+v", d, b)
+	}
+}
+
+func run(t *testing.T, b *usbtest.Backend, args ...string) string {
+	t.Helper()
+	cmd := newCommand("test", func() (usb.Backend, error) { return b, nil }, nil)
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	cmd.SetArgs(args)
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("%v: %v\n%s", args, err, out.String())
+	}
+	return out.String()
+}
+
+func TestListingFormats(t *testing.T) {
+	unnamed := usbtest.Light("/dev/hidraw1", "")
+	b := &usbtest.Backend{Infos: []usb.Info{usbtest.Light("/dev/hidraw0", "one"), unnamed},
+		Devices: map[string]*usbtest.Device{"/dev/hidraw1": {}}}
+
+	var list []map[string]any
+	if err := json.Unmarshal([]byte(run(t, b, "list", "--json")), &list); err != nil {
+		t.Fatal(err)
+	}
+	var hid struct{ Devices []map[string]any }
+	if err := json.Unmarshal([]byte(run(t, b, "hid", "--usagePage", "0xff43", "--list-json")), &hid); err != nil {
+		t.Fatal(err)
+	}
+	if len(list) != 2 || !reflect.DeepEqual(list, hid.Devices) || list[0]["vendor_id"] != "0x046D" || list[0]["usage"] != "0x0202" {
+		t.Fatalf("list --json %v\nhid --list-json %v", list, hid.Devices)
+	}
+
+	if text := run(t, b, "list"); !strings.Contains(text, "(no serial)  Litra Glow\n  path: /dev/hidraw1") {
+		t.Fatalf("list output %q", text)
+	}
+	if text := run(t, b, "--path", "/dev/hidraw1", "on"); text != "/dev/hidraw1: on\n" {
+		t.Fatalf("light without serial reported as %q", text)
 	}
 }
 

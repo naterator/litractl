@@ -122,19 +122,9 @@ func filtered(b usb.Backend, cfg settings) ([]usb.Info, error) {
 
 func list(out io.Writer, mode string, devices []usb.Info) error {
 	if mode == "--list-json" {
-		// Device identifiers use hexadecimal strings in JSON output.
-		rows := make([]map[string]any, 0, len(devices))
-		for _, d := range devices {
-			rows = append(rows, map[string]any{
-				"vendor_id": fmt.Sprintf("0x%04X", d.VendorID), "product_id": fmt.Sprintf("0x%04X", d.ProductID),
-				"usage_page": fmt.Sprintf("0x%04X", d.UsagePage), "usage": fmt.Sprintf("0x%04X", d.Usage),
-				"manufacturer_string": d.Manufacturer, "product_string": d.Product, "serial_number": d.Serial,
-				"interface_number": d.Interface, "bus_type": fmt.Sprint(d.BusType), "bus_type_name": d.Bus, "path": d.Path,
-			})
-		}
 		enc := json.NewEncoder(out)
 		enc.SetIndent("", "  ")
-		return enc.Encode(map[string]any{"devices": rows})
+		return enc.Encode(map[string]any{"devices": devices})
 	}
 	for _, d := range devices {
 		if mode == "--list-usages" {

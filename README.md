@@ -31,7 +31,9 @@ displays the project license.
 Commands are applied **in order to every connected Glow** by default. Use
 `--serial SERIAL` or `--path PATH` to target a particular light. If both are
 supplied, both must match. `list` shows each usable light once, even when its
-HID interface exposes multiple collections.
+HID interface exposes multiple collections. `list --json` and
+`hid --list-json` describe devices the same way, with vendor, product and
+usage IDs as hexadecimal strings such as `"0x046D"`.
 
 ```sh
 litracli list --json
@@ -95,8 +97,10 @@ Settings take effect in argument order. Defaults are 64-byte reports, a 250ms
 input timeout, base 16, and 32 bytes per line. `--length 0` infers length from
 the next write. Reports include a leading ID byte (`0` for unnumbered reports)
 and are zero-padded to the configured length. `--timeout -1` waits for input
-until interrupted. HID IDs are hexadecimal; report data accepts decimal or
-`0x`-prefixed hexadecimal bytes, separated by commas or spaces.
+until interrupted. Vendor/product IDs are hexadecimal. Usage pages and usages
+are decimal unless they are `0x`-prefixed, zero-padded (`0202`), or contain
+A–F. Report data accepts decimal or `0x`-prefixed hexadecimal bytes, separated
+by commas or spaces.
 
 Arguments are fully validated before USB access. Invalid bytes and oversized
 reports are rejected, failures return errors, and reads print only received
@@ -149,7 +153,7 @@ GitHub Actions runs the following checks and release jobs:
   macOS, Linux, and Windows.
 - Published releases upload docs/licenses and six raw binaries with SHA-256
   checksum files (amd64/arm64 on all three OSes).
-- Pull requests run `govulncheck`.
+- `govulncheck` runs on pull requests, pushes to `main`, and weekly.
 
 ```sh
 make test
@@ -162,7 +166,9 @@ command chaining/validation, selection/deduplication, partial device failures,
 HID report operations, cancellation, and updater download/replacement failures.
 Updater tests use temporary files and local HTTPS servers. The hardware test
 captures each light's power/brightness/temperature, tests changes, verifies USB
-readback, and restores the original raw values even if a check fails.
+readback, and restores the original raw values even if a check fails. It also
+logs the temperature each light reports after a 4550K request, to show whether
+the hardware keeps values that are not multiples of 100K.
 
 ## Linux access
 

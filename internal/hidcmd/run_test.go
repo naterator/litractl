@@ -80,9 +80,31 @@ func TestValidationBeforeAnyUSBWork(t *testing.T) {
 		{"--length", "-1"}, {"--length", "4097"}, {"--timeout", "-2"}, {"--width", "0"}, {"--base", "8"},
 		{"--read-input"}, {"--open", "--close", "--read-input"}, {"--open", "--open"},
 		{"--open", "--length", "0", "--read-input"}, {"--open-path"}, {"--quiet=true"}, {"--vidpid", "10000:1", "--list"},
+		{"--vidpid", "/C900", "--list"}, {"--vidpid", "046D:", "--list"}, {"--vidpid", " ,C900", "--list"},
 	} {
 		if _, err := Parse(args); err == nil {
 			t.Errorf("accepted invalid %v", args)
+		}
+	}
+}
+
+func TestFilterNumberBases(t *testing.T) {
+	for _, tt := range []struct {
+		vidpid, page, usage string
+		want                settings
+	}{
+		{"046D/C900", "0xff43", "0202", settings{vendor: 0x046d, product: 0xc900, page: 0xff43, usage: 0x202}},
+		{"046d c900", "FF43", "0x202", settings{vendor: 0x046d, product: 0xc900, page: 0xff43, usage: 0x202}},
+		{"046D", "65347", "12", settings{vendor: 0x046d, page: 0xff43, usage: 12}},
+		{"0/c900", "0", "000C", settings{product: 0xc900, usage: 0xc}},
+	} {
+		p, err := Parse([]string{"--vidpid", tt.vidpid, "--usagePage", tt.page, "--usage", tt.usage, "--list"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := p.operations[0].settings
+		if got.vendor != tt.want.vendor || got.product != tt.want.product || got.page != tt.want.page || got.usage != tt.want.usage {
+			t.Errorf("%+v: got %04X/%04X %04X/%04X", tt, got.vendor, got.product, got.page, got.usage)
 		}
 	}
 }

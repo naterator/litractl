@@ -117,7 +117,11 @@ Zero percent is the hardware's minimum brightness; use off to switch off.`,
 					fmt.Fprintln(cmd.OutOrStdout(), "No matching Litra Glow lights found.")
 				}
 				for _, d := range devices {
-					fmt.Fprintf(cmd.OutOrStdout(), "%s  %s\n  path: %s\n", d.Serial, d.Product, d.Path)
+					serial := d.Serial
+					if serial == "" {
+						serial = "(no serial)"
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "%s  %s\n  path: %s\n", serial, d.Product, d.Path)
 				}
 				return nil
 			})

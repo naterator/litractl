@@ -14,7 +14,8 @@ const Help = `Execute HID operations in argument order, using native Go HID back
 Usage: litracli hid [operations...]
 
   --vidpid VID/PID              Filter hexadecimal vendor/product IDs (0 = any)
-  --usagePage N, --usage N      Filter usage page/usage (decimal, 0xHEX, bare hex)
+  --usagePage N, --usage N      Filter usage page/usage: decimal, or hex when
+                                0x-prefixed, zero-padded (0202) or using A-F
   --serial TEXT                Filter serial number
   --list                       List matching devices
   --list-usages                List devices with usage page and usage
@@ -226,7 +227,8 @@ func number(s string, bits int, allowBareHex bool) (uint64, error) {
 	base := 10
 	if strings.HasPrefix(strings.ToLower(s), "0x") {
 		s, base = s[2:], 16
-	} else if allowBareHex && strings.ContainsAny(s, "abcdefABCDEF") {
+	} else if allowBareHex && (strings.ContainsAny(s, "abcdefABCDEF") || len(s) > 1 && s[0] == '0') {
+		// Usages are conventionally written as zero-padded hex, such as 0202.
 		base = 16
 	}
 	n, err := strconv.ParseUint(s, base, bits)
@@ -237,9 +239,12 @@ func number(s string, bits int, allowBareHex bool) (uint64, error) {
 }
 
 func parseIDs(s string) (uint16, uint16, error) {
-	parts := strings.FieldsFunc(s, func(r rune) bool { return strings.ContainsRune("/,:", r) || unicode.IsSpace(r) })
-	if len(parts) < 1 || len(parts) > 2 {
-		return 0, 0, fmt.Errorf("invalid VID/PID %q", s)
+	separator := func(r rune) bool { return strings.ContainsRune("/,:", r) || unicode.IsSpace(r) }
+	trimmed := strings.TrimSpace(s)
+	parts := strings.FieldsFunc(trimmed, separator)
+	// An empty side would otherwise shift the PID into the VID or drop it.
+	if len(parts) < 1 || len(parts) > 2 || strings.IndexFunc(trimmed, separator) == 0 || strings.LastIndexFunc(trimmed, separator) == len(trimmed)-1 {
+		return 0, 0, fmt.Errorf("invalid VID/PID %q; use 0 for any vendor or product", s)
 	}
 	values := [2]uint16{}
 	for i, part := range parts {

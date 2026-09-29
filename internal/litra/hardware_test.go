@@ -113,4 +113,20 @@ func TestHardware(t *testing.T) {
 			}
 		}
 	}
+	// Some Litra tools accept only multiples of 100K. Record what each light
+	// keeps for another value; this is informational and does not fail.
+	probe, err := Temperature(4550)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := Apply(context.Background(), b, devices, []Action{probe}, io.Discard); err != nil {
+		t.Fatal(err)
+	}
+	for _, info := range devices {
+		got, err := query(info, 0x8c)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("%s reports %dK after a %s request", info.Serial, int(got[4])<<8|int(got[5]), probe.Description)
+	}
 }

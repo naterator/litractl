@@ -18,12 +18,15 @@ import (
 // Linux uses the kernel's hidraw interface and sysfs.
 type linuxBackend struct{}
 
+// sysfsHidraw is replaced by tests with a synthetic sysfs tree.
+var sysfsHidraw = "/sys/class/hidraw"
+
 func New() (Backend, error)           { return &linuxBackend{}, nil }
 func (*linuxBackend) Version() string { return "native Linux hidraw" }
 func (*linuxBackend) Close() error    { return nil }
 
 func (*linuxBackend) Enumerate(vendor, product uint16) ([]Info, error) {
-	paths, err := filepath.Glob("/sys/class/hidraw/hidraw*")
+	paths, err := filepath.Glob(filepath.Join(sysfsHidraw, "hidraw*"))
 	if err != nil {
 		return nil, err
 	}
@@ -86,13 +89,13 @@ func (*linuxBackend) Enumerate(vendor, product uint16) ([]Info, error) {
 				break
 			}
 		}
-		descriptor, err := os.ReadFile(filepath.Join(parent, "report_descriptor"))
-		if err != nil {
-			return nil, fmt.Errorf("read %s report descriptor: %w", info.Path, err)
-		}
-		pairs, err := descriptorUsages(descriptor)
-		if err != nil {
-			return nil, fmt.Errorf("parse %s descriptor: %w", info.Path, err)
+		// Like macOS, list a device whose descriptor cannot be read or parsed
+		// without usages instead of failing enumeration of every device.
+		var pairs []usagePair
+		if descriptor, err := os.ReadFile(filepath.Join(parent, "report_descriptor")); err == nil {
+			pairs, _ = descriptorUsages(descriptor)
+		} else if errors.Is(err, os.ErrNotExist) {
+			continue // Removed during enumeration.
 		}
 		if len(pairs) == 0 {
 			pairs = []usagePair{{}}
@@ -108,8 +111,12 @@ func (*linuxBackend) Enumerate(vendor, product uint16) ([]Info, error) {
 
 func (*linuxBackend) Open(path string) (Device, error) {
 	fd, err := unix.Open(path, unix.O_RDWR|unix.O_NONBLOCK|unix.O_CLOEXEC, 0)
+	if errors.Is(err, os.ErrPermission) {
+		// Callers already name the path, as with the other backends.
+		return nil, fmt.Errorf("%w (access to /dev/hidraw requires an appropriate udev rule)", err)
+	}
 	if err != nil {
-		return nil, fmt.Errorf("open %s: %w (access to /dev/hidraw requires an appropriate udev rule)", path, err)
+		return nil, err
 	}
 	return &linuxDevice{fd: fd}, nil
 }
@@ -147,24 +154,21 @@ func (d *linuxDevice) GetReportDescriptor(p []byte) (int, error) {
 	if d.fd < 0 {
 		return 0, os.ErrClosed
 	}
-	var descriptor struct {
-		Size  uint32
-		Value [4096]byte
-	}
-	_, _, errno := unix.Syscall(unix.SYS_IOCTL, uintptr(d.fd), 0x80044801, uintptr(unsafe.Pointer(&descriptor.Size)))
+	// Request numbers come from x/sys because their encoding varies by
+	// architecture (for example ppc64le and mips64).
+	var descriptor unix.HIDRawReportDescriptor
+	_, _, errno := unix.Syscall(unix.SYS_IOCTL, uintptr(d.fd), unix.HIDIOCGRDESCSIZE, uintptr(unsafe.Pointer(&descriptor.Size)))
 	if errno != 0 {
 		return 0, errno
 	}
 	if descriptor.Size > 4096 || int(descriptor.Size) > len(p) {
-		return 0, ioBufferTooSmall
+		return 0, errBufferTooSmall
 	}
-	_, _, errno = unix.Syscall(unix.SYS_IOCTL, uintptr(d.fd), 0x90044802, uintptr(unsafe.Pointer(&descriptor)))
-	runtime.KeepAlive(&descriptor)
-	if errno != 0 {
-		return 0, errno
+	if err := unix.IoctlHIDGetDesc(d.fd, &descriptor); err != nil {
+		return 0, err
 	}
 	if descriptor.Size > 4096 || int(descriptor.Size) > len(p) {
-		return 0, ioBufferTooSmall
+		return 0, errBufferTooSmall
 	}
 	return copy(p, descriptor.Value[:descriptor.Size]), nil
 }

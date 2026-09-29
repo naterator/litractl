@@ -7,9 +7,11 @@ import (
 	"testing"
 )
 
+// Captured from a Litra Glow through IOHIDDeviceGetProperty.
+const litraDescriptorHex = "050c0901a101a1030930850115ff2501950175029126091f8100950175069103091f8103c0a1030930850215002501950175019106950175079103c0c00643ff0a0202a101851175089513150026ff000902810009029100c0"
+
 func TestLitraDescriptor(t *testing.T) {
-	// Captured from a Litra Glow through IOHIDDeviceGetProperty.
-	descriptor, _ := hex.DecodeString("050c0901a101a1030930850115ff2501950175029126091f8100950175069103091f8103c0a1030930850215002501950175019106950175079103c0c00643ff0a0202a101851175089513150026ff000902810009029100c0")
+	descriptor, _ := hex.DecodeString(litraDescriptorHex)
 	got, err := descriptorUsages(descriptor)
 	if err != nil || !reflect.DeepEqual(got, []usagePair{{0xc, 1}, {0xff43, 0x202}}) {
 		t.Fatalf("usages = %v, %v", got, err)
