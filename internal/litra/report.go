@@ -116,7 +116,7 @@ func Parse(args []string) ([]Action, error) {
 				}
 			}
 			if !found {
-				return nil, fmt.Errorf("unknown light command %q; run litracli --help", name)
+				return nil, fmt.Errorf("unknown light command %q; run litractl --help", name)
 			}
 		}
 	}

@@ -92,7 +92,7 @@ func assetName(goos, goarch string) (string, error) {
 	if goarch != "amd64" && goarch != "arm64" {
 		return "", fmt.Errorf("no release binaries for %s/%s", goos, goarch)
 	}
-	name := "litracli-" + goos + "-" + goarch
+	name := "litractl-" + goos + "-" + goarch
 	if goos == "windows" {
 		name += ".exe"
 	}
@@ -128,7 +128,7 @@ func (u updater) get(ctx context.Context, address, accept string) (*http.Respons
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "litracli updater")
+	req.Header.Set("User-Agent", "litractl updater")
 	req.Header.Set("Accept", accept)
 	resp, err := u.client.Do(req)
 	if err != nil {
@@ -249,7 +249,7 @@ func (u updater) run(ctx context.Context, current string, checkOnly bool) (Resul
 		return result, fmt.Errorf("executable is not a regular file: %s", target)
 	}
 	result.Path = target
-	staged, err := os.CreateTemp(filepath.Dir(target), ".litracli-update-*")
+	staged, err := os.CreateTemp(filepath.Dir(target), ".litractl-update-*")
 	if err != nil {
 		return result, installationError(target, err)
 	}
@@ -313,8 +313,8 @@ func validateBinary(path, goos, goarch string) error {
 	if err != nil {
 		return fmt.Errorf("download is not a Go executable: %w", err)
 	}
-	if info.Path != repository+"/cmd/litracli" || info.Main.Path != repository {
-		return errors.New("download is not a litracli executable")
+	if info.Path != repository+"/cmd/litractl" || info.Main.Path != repository {
+		return errors.New("download is not a litractl executable")
 	}
 	settings := make(map[string]string)
 	for _, setting := range info.Settings {
@@ -331,7 +331,7 @@ func installationError(path string, err error) error {
 		if runtime.GOOS == "windows" {
 			return fmt.Errorf("cannot replace %s: %w; run with write access to its directory", path, err)
 		}
-		return fmt.Errorf("cannot replace %s: %w; rerun with write access, for example sudo litracli update", path, err)
+		return fmt.Errorf("cannot replace %s: %w; rerun with write access, for example sudo litractl update", path, err)
 	}
 	return fmt.Errorf("cannot replace %s: %w", path, err)
 }

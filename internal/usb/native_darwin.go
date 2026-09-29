@@ -162,7 +162,7 @@ func New() (Backend, error) {
 		return nil, errors.New("IOHIDManagerCreate failed")
 	}
 	mac.managerMatching(m, 0)
-	return &macBackend{manager: m, loop: mac.runLoop(), mode: mac.stringCreate(0, "litracli.HID", 0x08000100), devices: make(map[*macDevice]bool)}, nil
+	return &macBackend{manager: m, loop: mac.runLoop(), mode: mac.stringCreate(0, "litractl.HID", 0x08000100), devices: make(map[*macDevice]bool)}, nil
 }
 
 func (b *macBackend) Version() string { return "native macOS IOKit" }

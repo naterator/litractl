@@ -11,7 +11,7 @@ import (
 
 const Help = `Execute HID operations in argument order, using native Go HID backends.
 
-Usage: litracli hid [operations...]
+Usage: litractl hid [operations...]
 
   --vidpid VID/PID              Filter hexadecimal vendor/product IDs (0 = any)
   --usagePage N, --usage N      Filter usage page/usage: decimal, or hex when
@@ -38,7 +38,7 @@ Usage: litracli hid [operations...]
   --width N, -w N              Bytes per output line (default 32)
   --quiet, -q                  Only print requested data/listings
   --verbose, -v                Print operation settings
-  --version                   Print litracli version and native backend
+  --version                   Print litractl version and native backend
   --help, -h                   Show this help
 
 Bytes are comma/space separated decimal or 0x-prefixed hex values. The first
@@ -47,7 +47,7 @@ byte is the report ID (0 for unnumbered reports). Reports are zero-padded to
 Read commands print only received bytes; a timeout prints no fabricated data.
 
 Example:
-  litracli hid --vidpid 046D/C900 --usagePage 0xff43 --open --length 20 --send-output 0x11,0xff,0x04,0x1c,1 --close
+  litractl hid --vidpid 046D/C900 --usagePage 0xff43 --open --length 20 --send-output 0x11,0xff,0x04,0x1c,1 --close
 `
 
 type settings struct {
@@ -212,7 +212,7 @@ func Parse(args []string) (*Program, error) {
 				op.id = byte(n)
 			}
 		default:
-			return nil, fmt.Errorf("unknown HID option %q; run litracli hid --help", name)
+			return nil, fmt.Errorf("unknown HID option %q; run litractl hid --help", name)
 		}
 		op.settings = cfg
 		p.operations = append(p.operations, op)

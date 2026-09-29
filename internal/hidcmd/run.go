@@ -32,7 +32,7 @@ func (p *Program) Run(ctx context.Context, b usb.Backend, out io.Writer, version
 		case "--help":
 			fmt.Fprint(out, Help)
 		case "--version":
-			fmt.Fprintf(out, "litracli %s\nBackend: %s\n", version, b.Version())
+			fmt.Fprintf(out, "litractl %s\nBackend: %s\n", version, b.Version())
 		case "--list", "--list-usages", "--list-detail", "--list-json":
 			devices, err := filtered(b, cfg)
 			if err != nil {

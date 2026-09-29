@@ -24,7 +24,7 @@ func newCommand(version string, factory usb.Factory, updateRun updateFunc) *cobr
 	var selector litra.Selector
 	var dryRun, quiet bool
 	root := &cobra.Command{
-		Use: "litracli", Short: "Control USB-connected Logitech Litra Glow lights",
+		Use: "litractl", Short: "Control USB-connected Logitech Litra Glow lights",
 		Long: `Control all connected Litra Glow lights, or select one with --serial or --path.
 Chain light commands to apply them in order.
 
@@ -33,10 +33,10 @@ Brightness presets: glow (10%), dim (20%), normal (40%), medium (60%),
 Temperature presets: warmest (2700K), warm (3000K), mild (3500K),
                      neutral (4000K), cool (5000K), cold (5500K), coldest (6500K).
 Zero percent is the hardware's minimum brightness; use off to switch off.`,
-		Example: "  litracli on normal warm\n  litracli brightness 65 temperature 4500\n  litracli --serial SERIAL off\n  litracli --dry-run on brightest coldest",
+		Example: "  litractl on normal warm\n  litractl brightness 65 temperature 4500\n  litractl --serial SERIAL off\n  litractl --dry-run on brightest coldest",
 		Version: version, SilenceUsage: true, SilenceErrors: true,
 	}
-	root.SetVersionTemplate("litracli {{.Version}}\n")
+	root.SetVersionTemplate("litractl {{.Version}}\n")
 	root.PersistentFlags().StringVar(&selector.Serial, "serial", "", "Control only the light with this serial number")
 	root.PersistentFlags().StringVar(&selector.Path, "path", "", "Control only the light with this HID path")
 	root.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Print light reports without opening USB devices")
@@ -143,7 +143,7 @@ Zero percent is the hardware's minimum brightness; use off to switch off.`,
 		},
 	})
 	root.AddCommand(&cobra.Command{Use: "version", Short: "Print the program version", Args: cobra.NoArgs,
-		Run: func(cmd *cobra.Command, _ []string) { fmt.Fprintf(cmd.OutOrStdout(), "litracli %s\n", version) },
+		Run: func(cmd *cobra.Command, _ []string) { fmt.Fprintf(cmd.OutOrStdout(), "litractl %s\n", version) },
 	})
 	root.AddCommand(&cobra.Command{Use: "license", Short: "Print the project license", Args: cobra.NoArgs,
 		Run: func(cmd *cobra.Command, _ []string) {

@@ -21,9 +21,9 @@ func newUpdateCommand(version string, run updateFunc) *cobra.Command {
 				fmt.Fprintf(cmd.OutOrStdout(), "Previous executable retained at %s until it is no longer running.\n", result.Backup)
 			}
 		case result.Available:
-			fmt.Fprintf(cmd.OutOrStdout(), "Update available: %s -> %s. Run litracli update to install.\n", result.Current, result.Latest)
+			fmt.Fprintf(cmd.OutOrStdout(), "Update available: %s -> %s. Run litractl update to install.\n", result.Current, result.Latest)
 		default:
-			fmt.Fprintf(cmd.OutOrStdout(), "litracli %s is up to date (latest: %s).\n", result.Current, result.Latest)
+			fmt.Fprintf(cmd.OutOrStdout(), "litractl %s is up to date (latest: %s).\n", result.Current, result.Latest)
 		}
 		return nil
 	}

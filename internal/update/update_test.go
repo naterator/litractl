@@ -32,13 +32,13 @@ func releaseBinary(t *testing.T) []byte {
 	t.Helper()
 	fixture.Do(func() {
 		var dir string
-		dir, fixture.err = os.MkdirTemp("", "litra-update-fixture-*")
+		dir, fixture.err = os.MkdirTemp("", "litractl-update-fixture-*")
 		if fixture.err != nil {
 			return
 		}
 		defer os.RemoveAll(dir)
-		path := filepath.Join(dir, "litracli.exe")
-		cmd := exec.Command("go", "build", "-trimpath", "-ldflags", "-s -w -X main.version=v1.10.0", "-o", path, "./cmd/litracli")
+		path := filepath.Join(dir, "litractl.exe")
+		cmd := exec.Command("go", "build", "-trimpath", "-ldflags", "-s -w -X main.version=v1.10.0", "-o", path, "./cmd/litractl")
 		cmd.Dir = "../.."
 		cmd.Env = append(os.Environ(), "GOOS="+runtime.GOOS, "GOARCH="+runtime.GOARCH)
 		if output, err := cmd.CombinedOutput(); err != nil {
@@ -74,7 +74,7 @@ func serveRelease(t *testing.T, body []byte) *releaseServer {
 	f := &releaseServer{body: body, checksum: hex.EncodeToString(digest[:]) + "\n"}
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		f.requests = append(f.requests, r.URL.Path)
-		if r.Header.Get("User-Agent") != "litracli updater" {
+		if r.Header.Get("User-Agent") != "litractl updater" {
 			t.Error("missing updater user agent")
 		}
 		if r.URL.Path == "/latest" {
@@ -138,7 +138,7 @@ func TestVersionComparison(t *testing.T) {
 func TestAssetPlatforms(t *testing.T) {
 	for _, goos := range []string{"darwin", "linux", "windows"} {
 		for _, goarch := range []string{"amd64", "arm64"} {
-			want := "litracli-" + goos + "-" + goarch
+			want := "litractl-" + goos + "-" + goarch
 			if goos == "windows" {
 				want += ".exe"
 			}
@@ -182,7 +182,7 @@ func TestInstallRelease(t *testing.T) {
 		t.Run(fmt.Sprintf("symlink=%v", symlink), func(t *testing.T) {
 			f := serveRelease(t, releaseBinary(t))
 			dir := t.TempDir()
-			target := filepath.Join(dir, "litracli.exe")
+			target := filepath.Join(dir, "litractl.exe")
 			if err := os.WriteFile(target, []byte("old executable"), 0751); err != nil {
 				t.Fatal(err)
 			}
@@ -253,7 +253,7 @@ func TestFailedUpdatePreservesExecutable(t *testing.T) {
 			f := serveRelease(t, []byte("downloaded payload"))
 			tt.edit(f)
 			dir := t.TempDir()
-			target := filepath.Join(dir, "litracli.exe")
+			target := filepath.Join(dir, "litractl.exe")
 			before := []byte("original executable must survive")
 			if err := os.WriteFile(target, before, 0755); err != nil {
 				t.Fatal(err)
@@ -274,7 +274,7 @@ func TestFailedUpdatePreservesExecutable(t *testing.T) {
 
 func assertNoStagingFiles(t *testing.T, dir string) {
 	t.Helper()
-	files, err := filepath.Glob(filepath.Join(dir, ".litracli-update-*"))
+	files, err := filepath.Glob(filepath.Join(dir, ".litractl-update-*"))
 	if err != nil || len(files) != 0 {
 		t.Fatalf("staging files not cleaned up: %v, %v", files, err)
 	}
@@ -314,7 +314,7 @@ func TestBinaryValidation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := validateBinary(self, runtime.GOOS, runtime.GOARCH); err == nil || !strings.Contains(err.Error(), "not a litracli") {
+	if err := validateBinary(self, runtime.GOOS, runtime.GOARCH); err == nil || !strings.Contains(err.Error(), "not a litractl") {
 		t.Fatalf("different Go program accepted: %v", err)
 	}
 }
@@ -348,7 +348,7 @@ func TestReadOnlyInstallDirectory(t *testing.T) {
 	}
 	f := serveRelease(t, []byte("not downloaded"))
 	dir := t.TempDir()
-	target := filepath.Join(dir, "litracli")
+	target := filepath.Join(dir, "litractl")
 	if err := os.WriteFile(target, []byte("original"), 0755); err != nil {
 		t.Fatal(err)
 	}
@@ -358,7 +358,7 @@ func TestReadOnlyInstallDirectory(t *testing.T) {
 	}
 	defer os.Chmod(dir, 0755)
 	result, err := f.u.run(context.Background(), "v1.0.0", false)
-	if !errors.Is(err, os.ErrPermission) || !strings.Contains(err.Error(), "sudo litracli update") || result.Updated {
+	if !errors.Is(err, os.ErrPermission) || !strings.Contains(err.Error(), "sudo litractl update") || result.Updated {
 		t.Fatalf("read-only directory: %+v, %v", result, err)
 	}
 	got, err := os.ReadFile(target)

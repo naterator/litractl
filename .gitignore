@@ -1,5 +1,5 @@
-/litracli
-/litracli.exe
+/litractl
+/litractl.exe
 /dist/
 *.test
 coverage.out

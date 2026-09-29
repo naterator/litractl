@@ -1,13 +1,12 @@
-# litracli
+# litractl
 
 A standalone Go CLI for USB-connected **Logitech Litra Glow** lights
-(`046D:C900`). The project directory/module is `litractl`; the executable is
-`litracli`.
+(`046D:C900`). The project and executable are named `litractl`.
 
 ```sh
-litracli on normal warm
-litracli off
-litracli brightness 65 temperature 4500
+litractl on normal warm
+litractl off
+litractl brightness 65 temperature 4500
 ```
 
 Light controls and low-level HID operations use the operating system's device
@@ -19,11 +18,11 @@ Requires Go 1.26 or newer.
 
 ```sh
 make build
-./litracli list
-./litracli on glow warmest
+./litractl list
+./litractl on glow warmest
 ```
 
-The resulting file can be moved anywhere on your PATH. `litracli license`
+The resulting file can be moved anywhere on your PATH. `litractl license`
 displays the project license.
 
 ## Light commands
@@ -36,11 +35,11 @@ HID interface exposes multiple collections. `list --json` and
 usage IDs as hexadecimal strings such as `"0x046D"`.
 
 ```sh
-litracli list --json
-litracli --serial SERIAL on normal warm
-litracli --path 'DevSrvsID:123456789' off
-litracli --dry-run on normal warm
-litracli --quiet on
+litractl list --json
+litractl --serial SERIAL on normal warm
+litractl --path 'DevSrvsID:123456789' off
+litractl --dry-run on normal warm
+litractl --quiet on
 ```
 
 | Commands | Setting |
@@ -69,15 +68,15 @@ hardware test also queries the device to verify the resulting settings.
 
 ## Low-level HID commands
 
-`litracli hid` lists HID devices and sends or reads individual reports:
+`litractl hid` lists HID devices and sends or reads individual reports:
 
 ```sh
-litracli hid --vidpid 046D/C900 --list-detail
-litracli hid --vidpid 046D/C900 --usagePage 0xff43 --open \
+litractl hid --vidpid 046D/C900 --list-detail
+litractl hid --vidpid 046D/C900 --usagePage 0xff43 --open \
   --length 20 --send-output 0x11,0xff,0x04,0x1c,1 --close
-litracli hid --vidpid 046D/C900 --usagePage 0xff43 --open \
+litractl hid --vidpid 046D/C900 --usagePage 0xff43 --open \
   --get-report-descriptor --close
-litracli hid --help
+litractl hid --help
 ```
 
 Supported operations:
@@ -125,8 +124,8 @@ input reports.
 ## Updates
 
 ```sh
-litracli update --check   # check only; also: litracli update check
-litracli update           # install a newer stable release over this executable
+litractl update --check   # check only; also: litractl update check
+litractl update           # install a newer stable release over this executable
 ```
 
 The updater checks `naterator/litractl` GitHub Releases, selects the matching platform,
@@ -141,9 +140,9 @@ build can update to a published stable version. Until a stable release and its
 assets exist, the checker reports that no release is available. Checking never
 installs anything, and ordinary light commands do not contact the network.
 
-Assets must be named `litracli-OS-ARCH` (`.exe` on Windows), with a corresponding
-`ASSET.sha256`. For example, `litracli-darwin-arm64` and
-`litracli-darwin-arm64.sha256`.
+Assets must be named `litractl-OS-ARCH` (`.exe` on Windows), with a corresponding
+`ASSET.sha256`. For example, `litractl-darwin-arm64` and
+`litractl-darwin-arm64.sha256`.
 
 ## CI and verification
 
@@ -180,13 +179,13 @@ can grant access to the active user:
 SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c900", TAG+="uaccess"
 ```
 
-Place it in `/etc/udev/rules.d/70-litracli.rules`, reload udev rules, and
+Place it in `/etc/udev/rules.d/70-litractl.rules`, reload udev rules, and
 reconnect the lights. On a headless system, use a device-access group appropriate
 to that installation. The program does not install or modify system rules.
 
 ## Source layout
 
-- `cmd/litracli`: executable entry point and version injection.
+- `cmd/litractl`: executable entry point and version injection.
 - `internal/cli`: Cobra subcommands.
 - `internal/license`: embedded project license.
 - `internal/litra`: light protocol, selectors, and hardware integration test.
